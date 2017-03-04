@@ -9,10 +9,13 @@ from collections import Counter
 train = pd.read_csv("train.csv")
 # print train.head()
 # print train.describe()
+train = pd.concat([train, pd.get_dummies(train['Position'])], axis=1)
+train.head()
+
 
 # Customized validation
 alg = svm.SVC(gamma=0.01, C=50.)
-if True:
+if False:
     train_samples = train[:]
 
     # manually form 3 set for cross validation
@@ -52,6 +55,7 @@ if True:
 
 # Load test
 test = pd.read_csv("test.csv")
+test = pd.concat([test, pd.get_dummies(test['Position'])], axis=1)
 
 # Train for test prediction
 alg.fit(train.ix[:, 4:], train['Prediction'])
