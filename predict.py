@@ -13,11 +13,31 @@ train = pd.read_csv("train.csv")
 # Cross Validation
 alg = svm.SVC(gamma=0.01, C=50.)
 if True:
-    train_samples = train[:]
-    kf = KFold(train_samples.shape[0], n_folds=3, random_state=1)
-    predictions = []
+    train_samples = train[:15000]
+
+    # manually form 3 set for cross validation
+    index_set0 = []
+    index_set1 = []
+    index_set2 = []
+    train_index_set = []
+    word_count = 0
+    for index, row in train_samples.iterrows():
+        if row['Position'] == 1:
+            # word is complete
+            word_count += 1
+
+        if (word_count % 3) == 0:
+            index_set0.append(index)
+        elif (word_count % 3) == 1:
+            index_set1.append(index)
+        else:
+            index_set2.append(index)
+    kf = [(index_set1 + index_set2, index_set0), (index_set2 + index_set0, index_set1), (index_set0 + index_set1, index_set2)]
+
+    # kf = KFold(train_samples.shape[0], n_folds=3, random_state=1)
+    predictions = pd.DataFrame(index=range(len(train_samples)), columns=('Prediction',))
     for train_index, test_index in kf:
-        print train_index, test_index
+        # print train_index, test_index
         # The predictors we're using the train the algorithm.  Note how we only take the rows in the train folds.
         train_set = (train_samples.iloc[train_index, 4:])
         # print train_set
@@ -29,11 +49,12 @@ if True:
 
         # We can now make predictions on the test fold
         test_predictions = alg.predict(train_samples.iloc[test_index, 4:])
-        predictions.append(test_predictions)
+        predictions.loc[test_index, 'Prediction'] = test_predictions
+        # print predictions
 
-    predictions = np.concatenate(predictions, axis=0)
     # print predictions
-    accuracy = float(len(predictions[predictions == train_samples['Prediction']]))/len(predictions)
+    print 'Full predictions\n', predictions[predictions['Prediction'] == train_samples['Prediction']]
+    accuracy = float(len(predictions[predictions['Prediction'] == train_samples['Prediction']]))/len(predictions)
     print accuracy
     exit(0)
 
