@@ -10,16 +10,14 @@ train = pd.read_csv("train.csv")
 # print train.head()
 # print train.describe()
 
-# Cross Validation
+# Customized validation
 alg = svm.SVC(gamma=0.01, C=50.)
 if True:
-    train_samples = train[:15000]
+    train_samples = train[:]
 
     # manually form 3 set for cross validation
-    index_set0 = []
-    index_set1 = []
-    index_set2 = []
     train_index_set = []
+    test_index_set = []
     word_count = 0
     for index, row in train_samples.iterrows():
         if row['Position'] == 1:
@@ -27,34 +25,28 @@ if True:
             word_count += 1
 
         if (word_count % 3) == 0:
-            index_set0.append(index)
-        elif (word_count % 3) == 1:
-            index_set1.append(index)
+            test_index_set.append(index)
         else:
-            index_set2.append(index)
-    kf = [(index_set1 + index_set2, index_set0), (index_set2 + index_set0, index_set1), (index_set0 + index_set1, index_set2)]
+            train_index_set.append(index)
 
-    # kf = KFold(train_samples.shape[0], n_folds=3, random_state=1)
-    predictions = pd.DataFrame(index=range(len(train_samples)), columns=('Prediction',))
-    for train_index, test_index in kf:
-        # print train_index, test_index
-        # The predictors we're using the train the algorithm.  Note how we only take the rows in the train folds.
-        train_set = (train_samples.iloc[train_index, 4:])
-        # print train_set
-        # exit(0)
+    print 'len(train_index_set)=%s, len(test_index_set)=%s' % (len(train_index_set), len(test_index_set))
+    # The predictors we're using the train the algorithm.  Note how we only take the rows in the train folds.
+    train_set = (train_samples.iloc[train_index_set, 4:])
+    # print train_set
+    # exit(0)
 
-        # The target we're using to train the algorithm.
-        train_target = train_samples['Prediction'].iloc[train_index]
-        alg.fit(train_set, train_target)
+    # The target we're using to train the algorithm.
+    train_target = train_samples['Prediction'].iloc[train_index_set]
+    alg.fit(train_set, train_target)
 
-        # We can now make predictions on the test fold
-        test_predictions = alg.predict(train_samples.iloc[test_index, 4:])
-        predictions.loc[test_index, 'Prediction'] = test_predictions
-        # print predictions
+    # We can now make predictions on the test fold
+    test_predictions = alg.predict(train_samples.iloc[test_index_set, 4:])
+    # print list(test_predictions)
+    # print list(train_samples.iloc[test_index_set]['Prediction'])
 
-    # print predictions
-    print 'Full predictions\n', predictions[predictions['Prediction'] == train_samples['Prediction']]
-    accuracy = float(len(predictions[predictions['Prediction'] == train_samples['Prediction']]))/len(predictions)
+    # print test_predictions == train_samples.iloc[test_index_set]['Prediction']
+    # print train_samples.iloc[test_index_set][test_predictions == train_samples.iloc[test_index_set]['Prediction']]
+    accuracy = float(len(train_samples.iloc[test_index_set][test_predictions == train_samples.iloc[test_index_set]['Prediction']]))/len(test_index_set)
     print accuracy
     exit(0)
 
